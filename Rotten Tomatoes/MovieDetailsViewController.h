@@ -1,5 +1,5 @@
 //
-//  ViewController.h
+//  MovieDetailsViewController.h
 //  Rotten Tomatoes
 //
 //  Created by Xiaolong Zhang on 2/3/15.
@@ -8,8 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ViewController : UIViewController
-
+@interface MovieDetailsViewController : UIViewController
 
 @end
-

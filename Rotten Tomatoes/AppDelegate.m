@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "MoviesViewController.h"
 
 @interface AppDelegate ()
 
@@ -16,7 +17,16 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    // Create window
+    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    // register MoviesViewController
+    MoviesViewController *vc = [[MoviesViewController alloc] init];
+    // navigation controller and use vc as the root view controller
+    UINavigationController *nvc = [[UINavigationController alloc] initWithRootViewController: vc];
+    // set the root view controller to the nvc
+    self.window.rootViewController = nvc;
+    // make window visiable
+    [self.window makeKeyAndVisible];
     return YES;
 }
 
