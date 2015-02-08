@@ -14,6 +14,7 @@
 @interface MoviesViewController () <UITableViewDataSource, UITableViewDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (strong, nonatomic) NSArray *movies;
+@property (strong, nonatomic) NSString *originalUrl;
 @end
 
 @implementation MoviesViewController
@@ -37,7 +38,7 @@
         NSDictionary *responseDictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
         
         self.movies = responseDictionary[@"movies"];
-        NSLog(@"response: %@", self.movies);
+//        NSLog(@"response: %@", self.movies);
         // reload table view after the data is loaded
         [self.tableView reloadData];
     }];
@@ -57,16 +58,26 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
     // create the cell with the cell identifier MovieCell
     MovieTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"MovieCell"];
+    
     // grab the movie from the dictionary
     NSDictionary *movie = self.movies[indexPath.row];
+    
     // set the title and synopsis
     cell.titleLabel.text = movie[@"title"];
     cell.synopsisLabel.text = movie[@"synopsis"];
     
     // set movie poster
     NSString *posterUrl = [movie valueForKeyPath:@"posters.thumbnail"];
+    self.originalUrl = [posterUrl stringByReplacingOccurrencesOfString:@"tmb" withString:@"ori"];
+//    UIImageView *originalImageView = [[UIImageView alloc] init];
+//    [originalImageView setImageWithURL:[NSURL URLWithString:posterUrl]];
+//    UIImage *scaledImage = [UIImage imageWithCGImage:[originalImageView.image CGImage]
+//                                               scale:(originalImageView.image.scale * 2.0)
+//                                         orientation:(originalImageView.image.imageOrientation)];
+//    [cell.posterView setImage:scaledImage];
     [cell.posterView setImageWithURL:[NSURL URLWithString:posterUrl]];
     
     return cell;
@@ -74,7 +85,14 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+    // Init movie details view controller
     MovieDetailsViewController *mdvc = [[MovieDetailsViewController alloc] init];
+    
+    // Pass movie dict to detail view controller
+    NSDictionary *movie = self.movies[indexPath.row];
+    mdvc.movie = movie;
+    
     [self.navigationController pushViewController:mdvc animated:YES];
 }
 /*
