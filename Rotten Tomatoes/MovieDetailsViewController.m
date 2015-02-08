@@ -29,7 +29,8 @@
     UIView *contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 250, 320, self.view.frame.size.height+400)];
     
     contentView.backgroundColor = [UIColor blackColor];
-    contentView.alpha = 0.75;
+    // Question: change alpha value to 1 and the view is still transparent
+    contentView.alpha = 1;
     [self.mainScrollView addSubview:contentView];
     
     // Set properties in the detail view

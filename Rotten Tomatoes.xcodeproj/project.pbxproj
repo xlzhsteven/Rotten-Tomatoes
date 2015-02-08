@@ -156,10 +156,10 @@
 			children = (
 				CE90E2A61A81E58F00949440 /* MoviesViewController.h */,
 				CE90E2A71A81E58F00949440 /* MoviesViewController.m */,
+				CE90E2A81A81E58F00949440 /* MoviesViewController.xib */,
 				CE52AEC61A820128005BDE7E /* MovieDetailsViewController.h */,
 				CE52AEC71A820128005BDE7E /* MovieDetailsViewController.m */,
 				CE52AEC81A820128005BDE7E /* MovieDetailsViewController.xib */,
-				CE90E2A81A81E58F00949440 /* MoviesViewController.xib */,
 				CE90E2AC1A81E9BB00949440 /* MovieTableViewCell.h */,
 				CE90E2AD1A81E9BB00949440 /* MovieTableViewCell.m */,
 				CE90E2AE1A81E9BB00949440 /* MovieTableViewCell.xib */,

@@ -10,6 +10,7 @@
 #import "MovieTableViewCell.h"
 #import "MovieDetailsViewController.h"
 #import "UIImageView+AFNetworking.h"
+#import "SVProgressHUD.h"
 
 @interface MoviesViewController () <UITableViewDataSource, UITableViewDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
@@ -24,26 +25,68 @@
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
     
+    // Set title
+    self.title = @"Movies";
+    
     // Register MovieTableViewCell Nib and give the name MovieCell as cell identifier
     [self.tableView registerNib:[UINib nibWithNibName:@"MovieTableViewCell" bundle:nil] forCellReuseIdentifier:@"MovieCell"];
     
     // Set row height statically
     self.tableView.rowHeight = 100;
     
+    // Loading view
+    [SVProgressHUD setForegroundColor:[UIColor whiteColor]];
+    [SVProgressHUD setBackgroundColor:[[UIColor blackColor] colorWithAlphaComponent:0.75]];
+    [SVProgressHUD showWithStatus:@"Loading"];
+    
     // Get data from Rotten-Tomatoes API
     NSURL *url = [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/movies/box_office.json?apikey=d22zvjtfkpnurvzd3wydc4fa"];
-    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.timeoutInterval = 5.0;
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-        NSDictionary *responseDictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-        
-        self.movies = responseDictionary[@"movies"];
-//        NSLog(@"response: %@", self.movies);
-        // reload table view after the data is loaded
-        [self.tableView reloadData];
+        if (connectionError) {
+            [self showError];
+        } else {
+            NSDictionary *responseDictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+            
+            self.movies = responseDictionary[@"movies"];
+            
+            // reload table view after the data is loaded
+            [self.tableView reloadData];
+        }
+        [SVProgressHUD dismiss];
     }];
+}
+
+- (void)showError {
+    UIView *errorView = [[UIView alloc] initWithFrame:CGRectMake(0, self.navigationController.toolbar.frame.size.height, 320, 20)];
+    errorView.backgroundColor = [UIColor blackColor];
+    errorView.alpha = 0;
+    [self.view addSubview:errorView];
     
-    self.title = @"Movies";
+    UILabel *errorLabel = [[UILabel alloc] init];
+    errorLabel.text = @"Network error, please try again later";
+    errorLabel.font = [UIFont systemFontOfSize:8];
+    errorLabel.textColor = [UIColor whiteColor];
+    [errorLabel sizeToFit];
+    
+    CGRect myFrame = errorLabel.frame;
+    myFrame = CGRectMake(160-myFrame.size.width/2, 10-myFrame.size.height/2, myFrame.size.width, myFrame.size.height);
+    errorLabel.frame = myFrame;
+    
+    [errorView addSubview:errorLabel];
+    
+    
+    [UIView animateWithDuration:1 delay:0 options:UIViewAnimationOptionAllowAnimatedContent animations:^{
+        errorView.center = CGPointMake(errorView.center.x, errorView.center.y + 20);
+        errorView.alpha = 0.75;
+    } completion:^(BOOL finished) {
+        [UIView animateWithDuration:1 delay:1 options:UIViewAnimationOptionAllowAnimatedContent animations:^{
+            errorView.center = CGPointMake(errorView.center.x, errorView.center.y - 20);
+            errorView.alpha = 0;
+        } completion:^(BOOL finished) {
+        }];
+    }];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -68,16 +111,11 @@
     // set the title and synopsis
     cell.titleLabel.text = movie[@"title"];
     cell.synopsisLabel.text = movie[@"synopsis"];
+    cell.synopsisLabel.font = [UIFont systemFontOfSize:10];
     
     // set movie poster
     NSString *posterUrl = [movie valueForKeyPath:@"posters.thumbnail"];
     self.originalUrl = [posterUrl stringByReplacingOccurrencesOfString:@"tmb" withString:@"ori"];
-//    UIImageView *originalImageView = [[UIImageView alloc] init];
-//    [originalImageView setImageWithURL:[NSURL URLWithString:posterUrl]];
-//    UIImage *scaledImage = [UIImage imageWithCGImage:[originalImageView.image CGImage]
-//                                               scale:(originalImageView.image.scale * 2.0)
-//                                         orientation:(originalImageView.image.imageOrientation)];
-//    [cell.posterView setImage:scaledImage];
     [cell.posterView setImageWithURL:[NSURL URLWithString:posterUrl]];
     
     return cell;
