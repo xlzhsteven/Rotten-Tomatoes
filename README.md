@@ -33,9 +33,8 @@ Time spent: 15 hours
 
 - [ ] Customize the navigation bar.
 
-###Walkthrough
-Video Walkthrough
-
+###Video Walkthrough
+<img src="https://cloud.githubusercontent.com/assets/3433026/6102249/9a92517c-afe7-11e4-80c7-05c4f7b4c7c3.gif" alt="" width="300">
 
 ###Credits
 
