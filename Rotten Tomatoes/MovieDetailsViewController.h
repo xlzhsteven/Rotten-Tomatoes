@@ -10,5 +10,5 @@
 
 @interface MovieDetailsViewController : UIViewController
 @property (strong, nonatomic) NSDictionary *movie;
-
+@property (strong, nonatomic) UIImage *preloadedImage;
 @end

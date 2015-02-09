@@ -12,10 +12,17 @@
 #import "UIImageView+AFNetworking.h"
 #import "SVProgressHUD.h"
 
-@interface MoviesViewController () <UITableViewDataSource, UITableViewDelegate>
+@interface MoviesViewController () <UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, UISearchDisplayDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UISearchBar *searchBar;
 @property (strong, nonatomic) NSArray *movies;
 @property (strong, nonatomic) NSString *originalUrl;
+@property (strong, nonatomic) UIRefreshControl *refreshControl;
+@property (strong, nonatomic) NSString *lastUpdatedTime;
+@property (strong, nonatomic) NSMutableArray *searchedArray;
+@property (assign, nonatomic) BOOL isSearch;
+
+
 @end
 
 @implementation MoviesViewController
@@ -24,6 +31,8 @@
     [super viewDidLoad];
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
+    self.searchBar.delegate = self;
+    self.searchBar.placeholder = @"Enter movie name here";
     
     // Set title
     self.title = @"Movies";
@@ -33,19 +42,27 @@
     
     // Set row height statically
     self.tableView.rowHeight = 100;
+    [self getData];
     
-    // Loading view
-    [SVProgressHUD setForegroundColor:[UIColor whiteColor]];
-    [SVProgressHUD setBackgroundColor:[[UIColor blackColor] colorWithAlphaComponent:0.75]];
-    [SVProgressHUD showWithStatus:@"Loading"];
-    
+    // Pull to refresh
+    self.refreshControl = [[UIRefreshControl alloc] init];
+    [self.refreshControl addTarget:self action:@selector(refresh:) forControlEvents:UIControlEventValueChanged];
+    [self.tableView insertSubview:self.refreshControl atIndex:0];
+}
+
+#pragma mark - Helper methods
+- (void)getData {
     // Get data from Rotten-Tomatoes API
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"MMM d, h:mm a"];
     NSURL *url = [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/movies/box_office.json?apikey=d22zvjtfkpnurvzd3wydc4fa"];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.timeoutInterval = 5.0;
+    [self loading];
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
         if (connectionError) {
             [self showError];
+            [self.refreshControl endRefreshing];
         } else {
             NSDictionary *responseDictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
             
@@ -53,9 +70,23 @@
             
             // reload table view after the data is loaded
             [self.tableView reloadData];
+            [self.refreshControl endRefreshing];
+            self.lastUpdatedTime = [NSString stringWithFormat:@"Last updated on %@", [formatter stringFromDate:[NSDate date]]];
         }
         [SVProgressHUD dismiss];
     }];
+}
+
+- (void)refresh: (UIRefreshControl *)refresh {
+    [self getData];
+    self.refreshControl.attributedTitle = [[NSAttributedString alloc] initWithString:self.lastUpdatedTime];
+}
+
+- (void)loading{
+    // Loading view
+    [SVProgressHUD setForegroundColor:[UIColor whiteColor]];
+    [SVProgressHUD setBackgroundColor:[[UIColor blackColor] colorWithAlphaComponent:0.75]];
+    [SVProgressHUD showWithStatus:@"Loading"];
 }
 
 - (void)showError {
@@ -97,7 +128,11 @@
 #pragma mark - Table Methods
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.movies.count;
+    if (self.isSearch) {
+        return self.searchedArray.count;
+    } else {
+        return self.movies.count;
+    }
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -106,7 +141,12 @@
     MovieTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"MovieCell"];
     
     // grab the movie from the dictionary
-    NSDictionary *movie = self.movies[indexPath.row];
+    NSDictionary *movie = [[NSDictionary alloc] init];
+    if (self.isSearch) {
+        movie = self.searchedArray[indexPath.row];
+    } else {
+        movie = self.movies[indexPath.row];
+    }
     
     // set the title and synopsis
     cell.titleLabel.text = movie[@"title"];
@@ -122,16 +162,51 @@
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    // dismiss keyboard when scroll
+    [self.searchBar resignFirstResponder];
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     
     // Init movie details view controller
     MovieDetailsViewController *mdvc = [[MovieDetailsViewController alloc] init];
     
     // Pass movie dict to detail view controller
-    NSDictionary *movie = self.movies[indexPath.row];
+    NSDictionary *movie = [[NSDictionary alloc] init];
+    if (self.isSearch) {
+        movie = self.searchedArray[indexPath.row];
+    } else {
+        movie = self.movies[indexPath.row];
+    }
     mdvc.movie = movie;
     
+    // get movie table view cell object
+    MovieTableViewCell *cell = (MovieTableViewCell *)[tableView cellForRowAtIndexPath:indexPath];
+    mdvc.preloadedImage = cell.posterView.image;
     [self.navigationController pushViewController:mdvc animated:YES];
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    // dismiss keyboard when scroll
+    [self.searchBar resignFirstResponder];
+}
+
+#pragma mark - Search bar methods
+-(void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
+    // isSearch is false when the search bar is empty or nil
+    if ([searchText isEqualToString:@""] || searchText == nil) {
+        self.isSearch = NO;
+        [self.tableView reloadData];
+        return;
+    }
+    
+    self.isSearch = YES;
+    
+    // set filter
+    NSPredicate *filter = [NSPredicate predicateWithFormat:@"title contains[c] %@", searchText];
+    // filter and set the share property searchedArray
+    self.searchedArray = (NSMutableArray *)[self.movies filteredArrayUsingPredicate:filter];
+    
+    // reload table view to refresh data
+    [self.tableView reloadData];
 }
 /*
 #pragma mark - Navigation

@@ -59,19 +59,18 @@
     [contentView addSubview:audienceScoreLabel];
     [contentView addSubview:synopsisLabel];
     
-    [self.backgroundImageView setImageWithURL:[NSURL URLWithString:backgroundImageUrl]];
+//    [self.backgroundImageView setImageWithURL:[NSURL URLWithString:url]];
+    [self.backgroundImageView setImage:self.preloadedImage];
+    [self.backgroundImageView setImageWithURLRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:backgroundImageUrl]] placeholderImage:nil success:^(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image) {
+        self.backgroundImageView.image = image;
+    } failure:^(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error) {
+        nil;
+    }];
     
     // TODO: fix hard code offset value
     float scrollHeight = 310 + movieTitleLabel.frame.size.height + criticsScoreLabel.frame.size.height + audienceScoreLabel.frame.size.height + synopsisLabel.frame.size.height - self.navigationController.toolbar.frame.size.height;
     
     self.mainScrollView.contentSize = CGSizeMake(320, scrollHeight);
-    
-//    CGRect contentRect = CGRectZero;
-//    for (UIView *view in self.mainScrollView.subviews) {
-//        contentRect = CGRectUnion(contentRect, view.frame);
-//    }
-//    CGSize scrollableSize = CGSizeMake(320, contentRect.size.height);
-//    self.mainScrollView.contentSize = scrollableSize;
 }
 
 - (void)didReceiveMemoryWarning {
